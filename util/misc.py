@@ -333,6 +333,8 @@ def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
         mask = torch.stack(updated_masks)
     else:
         raise ValueError('not supported')
+
+
     return NestedTensor(tensor, mask)
 
 # _onnx_nested_tensor_from_tensor_list() is an implementation of
