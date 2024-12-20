@@ -126,8 +126,6 @@ def filter_boxes(scores, boxes, confidence=0.5, apply_nms=True, iou=0.5):
         scores, boxes = scores[keep], boxes[keep]
 
     return scores, boxes
-
-
 # COCO classes
 '''
 CLASSES = [
@@ -174,85 +172,15 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=1):
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
-# def detection(args):
-#     print(args)
-#     device = torch.device(args.device)
-#
-#     # ------------------------------------导入网络
-#     # 下面的criterion是算损失函数要用的，推理用不到,postprocessors是解码用的，这里也没有用，用的是自己的。
-#     model, criterion, postprocessors = build_model(args)
-#
-#     # ------------------------------------加载权重
-#     checkpoint = torch.load(args.resume, map_location='cuda')
-#     model.load_state_dict(checkpoint['model'])
-#
-#     # ------------------------------------把权重加载到gpu或cpu上
-#     model.to(device)
-#
-#     # ------------------------------------打印出网络的参数大小
-#     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-#     print("parameters:", n_parameters)
-#
-#     # ------------------------------------设置好存储输出结果的文件夹
-#     output_dir = Path(args.output_dir)
-#
-#     # -----------------------------------读取数据集,进行推理
-#     image_Totensor = torchvision.transforms.ToTensor()
-#     # image_file_path = os.listdir("inference_demo/detect_demo")
-#     image_file_path = os.listdir(args.coco_path)
-#     image_set = []
-#
-#     for image_item in image_file_path:
-#         print("inference_image:", image_item)
-#         image_path = os.path.join(args.coco_path, image_item)
-#         image = Image.open(image_path)
-#         image_tensor = image_Totensor(image)
-#         image_tensor = torch.reshape(image_tensor,
-#                                      [-1, image_tensor.shape[0], image_tensor.shape[1], image_tensor.shape[2]])
-#         image_tensor = image_tensor.to(device)
-#
-#
-#         time1 = time.time()
-#         inference_result = model(image_tensor)
-#         time2 = time.time()
-#
-#
-#         print("inference_time:", time2 - time1)
-#         probas = inference_result['pred_logits'].softmax(-1)[0, :, :-1].cpu()
-#         bboxes_scaled = rescale_bboxes(inference_result['pred_boxes'][0,].cpu(),
-#                                        (image_tensor.shape[3], image_tensor.shape[2]))
-#         scores, boxes = filter_boxes(probas, bboxes_scaled)
-#         scores = scores.data.numpy()
-#         boxes = boxes.data.numpy()
-#         for i in range(boxes.shape[0]):
-#             class_id = scores[i].argmax()
-#             label = CLASSES[class_id]
-#             confidence = scores[i].max()
-#             text = f"{label} {confidence:.3f}"
-#             image = np.array(image)
-#             plot_one_box(boxes[i], image, label=text)
-#         cv2.imshow("images", image)
-#         cv2.waitKey(1)
-#         image = Image.fromarray(image)
-#         image.save(os.path.join(args.output_dir, image_item))
 
+def set_args(resume, num_classes, backbone):
+    parser = argparse.ArgumentParser('DETR', parents=[get_args_parser()])
+    args = parser.parse_args()
+    args.resume = resume
+    args.num_classes = num_classes
+    args.backbone = backbone
+    return args
 
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])
-#     args = parser.parse_args()
-#
-#     args.resume = "/home/zhaojc/group/wzGroup/DETR/detr/d2/configs/checkpoint-coco4-0058.pth"
-#     args.coco_path = "/home/zhaojc/group/wzGroup/DETR/detr/detect-test/image01"
-#     # args.coco_path = "/home/zhaojc/group/wzGroup/DETR/detr/coco/coco2"
-#     #args.epochs = 150
-#     args.output_dir = "detect-test/test-58-1"
-#     #args.batch_size = 4  # 8  1
-#     args.num_classes = 80  # val 74  train 79
-#     args.num_workers = 12
-#     args.backbone = "resnet101"
-#     # args.lr_drop = 60
-#     args.lr = 1e-8
-#
-#     if args.output_dir:
-#         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-#     detection(args)
+def get_classes():
+    return CLASSES
+
