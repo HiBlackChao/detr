@@ -303,7 +303,6 @@ class NestedTensor(object):
     def __repr__(self):
         return str(self.tensors)
 
-
 def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
     # TODO make this more general
     if tensor_list[0].ndim == 3:
@@ -314,20 +313,29 @@ def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
 
         # TODO make it support different-sized images
         max_size = _max_by_axis([list(img.shape) for img in tensor_list])
-        # min_size = tuple(min(s) for s in zip(*[img.shape for img in tensor_list]))
         batch_shape = [len(tensor_list)] + max_size
         b, c, h, w = batch_shape
         dtype = tensor_list[0].dtype
         device = tensor_list[0].device
         tensor = torch.zeros(batch_shape, dtype=dtype, device=device)
         mask = torch.ones((b, h, w), dtype=torch.bool, device=device)
+        tensor.requires_grad = True
+        padded_tensors = []
+        updated_masks = []
         for img, pad_img, m in zip(tensor_list, tensor, mask):
-            pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
-            m[: img.shape[1], :img.shape[2]] = False
+            new_pad_img = pad_img.clone()
+            new_pad_img[: img.shape[0], : img.shape[1], : img.shape[2]] = img.clone()
+            padded_tensors.append(new_pad_img)
+            new_m = m.clone()
+            new_m[: img.shape[1], : img.shape[2]] = False
+            updated_masks.append(new_m)
+        tensor = torch.stack(padded_tensors)
+        mask = torch.stack(updated_masks)
     else:
         raise ValueError('not supported')
-    return NestedTensor(tensor, mask)
 
+
+    return NestedTensor(tensor, mask)
 
 # _onnx_nested_tensor_from_tensor_list() is an implementation of
 # nested_tensor_from_tensor_list() that is supported by ONNX tracing.
